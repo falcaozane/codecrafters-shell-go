@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -38,38 +39,54 @@ func main() {
 				handleType(args[0], builtins)
 			}
 		default:
-			fmt.Printf("%s: command not found\n", command)
+			// 1. Check if the command exists in PATH
+			fullPath, found := findInPath(command)
+			
+			if found {
+				// 2. Prepare the external command
+				cmd := exec.Command(fullPath, args...)
+				
+				// 3. Connect the command's output/error to our shell's output
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				
+				// 4. Run the command and wait for it to finish
+				err := cmd.Run()
+				if err != nil {
+					// Handle cases where the command fails during execution
+					// (e.g., permission denied after finding the file)
+					fmt.Printf("%s: %v\n", command, err)
+				}
+			} else {
+				fmt.Printf("%s: command not found\n", command)
+			}
 		}
 	}
 }
 
+// handleType remains the same as before...
 func handleType(target string, builtins map[string]bool) {
-	// 1. Check Builtins first
 	if builtins[target] {
 		fmt.Printf("%s is a shell builtin\n", target)
 		return
 	}
+	if path, found := findInPath(target); found {
+		fmt.Printf("%s is %s\n", target, path)
+	} else {
+		fmt.Printf("%s: not found\n", target)
+	}
+}
 
-	// 2. Search PATH for Executable
+// findInPath remains the same, ensuring we only find executables
+func findInPath(command string) (string, bool) {
 	pathEnv := os.Getenv("PATH")
 	paths := filepath.SplitList(pathEnv)
-
 	for _, dir := range paths {
-		fullPath := filepath.Join(dir, target)
-		
+		fullPath := filepath.Join(dir, command)
 		info, err := os.Stat(fullPath)
-		if err != nil {
-			continue // Skip directories that don't exist
-		}
-
-		// Check if it's a regular file AND has execute permissions
-		// 0111 is the bitmask for --x--x--x
-		if info.Mode().IsRegular() && info.Mode()&0111 != 0 {
-			fmt.Printf("%s is %s\n", target, fullPath)
-			return
+		if err == nil && info.Mode().IsRegular() && info.Mode()&0111 != 0 {
+			return fullPath, true
 		}
 	}
-
-	// 3. Not found anywhere
-	fmt.Printf("%s: not found\n", target)
+	return "", false
 }
