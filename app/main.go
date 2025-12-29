@@ -34,53 +34,42 @@ func main() {
 		case "echo":
 			fmt.Println(strings.Join(args, " "))
 		case "type":
-			handleType(args, builtins)
+			if len(args) > 0 {
+				handleType(args[0], builtins)
+			}
 		default:
 			fmt.Printf("%s: command not found\n", command)
 		}
 	}
 }
 
-// handleType manages the logic for identifying command locations
-func handleType(args []string, builtins map[string]bool) {
-	if len(args) == 0 {
-		return
-	}
-	target := args[0]
-
-	// 1. Check if it's a shell builtin
+func handleType(target string, builtins map[string]bool) {
+	// 1. Check Builtins first
 	if builtins[target] {
 		fmt.Printf("%s is a shell builtin\n", target)
 		return
 	}
 
-	// 2. Search for the executable in the PATH
-	fullPath, found := findInPath(target)
-	if found {
-		fmt.Printf("%s is %s\n", target, fullPath)
-	} else {
-		fmt.Printf("%s: not found\n", target)
-	}
-}
-
-// findInPath iterates through directories in the PATH environment variable
-func findInPath(command string) (string, bool) {
+	// 2. Search PATH for Executable
 	pathEnv := os.Getenv("PATH")
 	paths := filepath.SplitList(pathEnv)
 
 	for _, dir := range paths {
-		fullPath := filepath.Join(dir, command)
+		fullPath := filepath.Join(dir, target)
 		
-		// 1. Check if the file exists
 		info, err := os.Stat(fullPath)
 		if err != nil {
-			continue // File doesn't exist in this directory, move to next
+			continue // Skip directories that don't exist
 		}
 
-		// 2. Optional but recommended: Check if it's a regular file (not a directory)
-		if info.Mode().IsRegular() {
-			return fullPath, true
+		// Check if it's a regular file AND has execute permissions
+		// 0111 is the bitmask for --x--x--x
+		if info.Mode().IsRegular() && info.Mode()&0111 != 0 {
+			fmt.Printf("%s is %s\n", target, fullPath)
+			return
 		}
 	}
-	return "", false
+
+	// 3. Not found anywhere
+	fmt.Printf("%s: not found\n", target)
 }
