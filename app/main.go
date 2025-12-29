@@ -43,18 +43,16 @@ func main() {
 			fullPath, found := findInPath(command)
 			
 			if found {
-				// 2. Prepare the external command
-				cmd := exec.Command(fullPath, args...)
+				// Use the original command name for the arguments list
+				// but point the execution Path to the fullPath found.
+				cmd := exec.Command(command, args...)
+				cmd.Path = fullPath 
 				
-				// 3. Connect the command's output/error to our shell's output
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
 				
-				// 4. Run the command and wait for it to finish
 				err := cmd.Run()
 				if err != nil {
-					// Handle cases where the command fails during execution
-					// (e.g., permission denied after finding the file)
 					fmt.Printf("%s: %v\n", command, err)
 				}
 			} else {
