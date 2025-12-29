@@ -15,20 +15,30 @@ func main() {
 
 		input, err := reader.ReadString('\n')
 		if err != nil {
-			// Handle EOF (Ctrl+D) gracefully
 			os.Exit(0)
 		}
 
-		// Clean the input to remove \n or \r\n
-		command := strings.TrimSpace(input)
+		// 1. Trim and Split the input into parts
+		input = strings.TrimSpace(input)
+		if input == "" {
+			continue
+		}
+		
+		// parts[0] is the command, parts[1:] are the arguments
+		parts := strings.Fields(input)
+		command := parts[0]
+		args := parts[1:]
 
-		// Check for known commands
-		if command == "exit" {
+		// 2. Command Router (Switch Statement)
+		switch command {
+		case "exit":
 			os.Exit(0)
-		} else if command == "" {
-			continue // Handle empty enter key press
-		} else {
-			// Print error for unknown commands
+
+		case "echo":
+			// Join the arguments back together with a single space
+			fmt.Println(strings.Join(args, " "))
+
+		default:
 			fmt.Printf("%s: command not found\n", command)
 		}
 	}
