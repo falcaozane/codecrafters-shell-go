@@ -66,13 +66,19 @@ func handleType(args []string, builtins map[string]bool) {
 // findInPath iterates through directories in the PATH environment variable
 func findInPath(command string) (string, bool) {
 	pathEnv := os.Getenv("PATH")
-	// filepath.SplitList automatically handles ':' on Unix and ';' on Windows
 	paths := filepath.SplitList(pathEnv)
 
 	for _, dir := range paths {
 		fullPath := filepath.Join(dir, command)
-		// Check if the file exists
-		if _, err := os.Stat(fullPath); err == nil {
+		
+		// 1. Check if the file exists
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			continue // File doesn't exist in this directory, move to next
+		}
+
+		// 2. Optional but recommended: Check if it's a regular file (not a directory)
+		if info.Mode().IsRegular() {
 			return fullPath, true
 		}
 	}
