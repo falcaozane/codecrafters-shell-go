@@ -34,6 +34,8 @@ func main() {
 			os.Exit(0)
 		case "echo":
 			fmt.Println(strings.Join(args, " "))
+		case "pwd":
+			presentWorkingDirectory()
 		case "type":
 			if len(args) > 0 {
 				handleType(args[0], builtins)
@@ -87,4 +89,13 @@ func findInPath(command string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func presentWorkingDirectory() {
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error retrieving current directory:", err)
+		return
+	}
+	fmt.Println(dir)
 }
