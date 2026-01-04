@@ -105,8 +105,29 @@ func presentWorkingDirectory() {
 }
 
 func changeDirectory(path string) {
-	err := os.Chdir(path)
+	var targetPath string
+
+	// Handle Tilde Expansion
+	if path == "~" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Printf("cd: could not determine home directory\n")
+			return
+		}
+		targetPath = home
+	} else if strings.HasPrefix(path, "~/") {
+		// Handle paths like ~/Downloads
+		home, _ := os.UserHomeDir()
+		targetPath = filepath.Join(home, path[2:])
+	} else {
+		targetPath = path
+	}
+
+	// Attempt to change the directory
+	err := os.Chdir(targetPath)
 	if err != nil {
+		// Ensure we print the original 'path' in the error message, 
+		// not the expanded internal 'targetPath'
 		fmt.Printf("cd: %s: No such file or directory\n", path)
 	}
 }
