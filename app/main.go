@@ -11,7 +11,7 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	builtins := map[string]bool{"exit": true, "echo": true, "type": true, "pwd": true}
+	builtins := map[string]bool{"exit": true, "echo": true, "type": true, "pwd": true, "cd": true}
 
 	for {
 		fmt.Print("$ ")
@@ -36,6 +36,10 @@ func main() {
 			fmt.Println(strings.Join(args, " "))
 		case "pwd":
 			presentWorkingDirectory()
+		case "cd":
+			if len(args) > 0 {
+				changeDirectory(args[0])
+			}
 		case "type":
 			if len(args) > 0 {
 				handleType(args[0], builtins)
@@ -98,4 +102,11 @@ func presentWorkingDirectory() {
 		return
 	}
 	fmt.Println(dir)
+}
+
+func changeDirectory(path string) {
+	err := os.Chdir(path)
+	if err != nil {
+		fmt.Printf("cd: %v\n", err)
+	}
 }
