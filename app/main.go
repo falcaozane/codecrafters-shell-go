@@ -11,7 +11,7 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	builtins := map[string]bool{"exit": true, "echo": true, "type": true}
+	builtins := map[string]bool{"exit": true, "echo": true, "type": true, "pwd": true}
 
 	for {
 		fmt.Print("$ ")
