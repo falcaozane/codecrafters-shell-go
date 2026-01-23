@@ -53,6 +53,19 @@ func main() {
 				handleType(args[0], builtins)
 			}
 		default:
+			var stdoutFile string
+			var cleanedArgs []string
+
+			for i:=0;i<len(args);i++ {
+				if args[i] == ">" || args[i] == "1>"{
+					if i+1 < len(args) {
+						stdoutFile = args[i+1]
+						break
+					}
+				}
+				cleanedArgs = append(cleanedArgs,args[i])
+			}
+
 			// 1. Check if the command exists in PATH
 			fullPath, found := findInPath(command)
 			
@@ -64,6 +77,16 @@ func main() {
 				
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
+
+				if stdoutFile != "" {
+					file, err := os.OpenFile(stdoutFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+					if err != nil {
+						fmt.Printf("Error creating file %s: %v\n", stdoutFile, err)
+						continue
+					}
+					defer file.Close()
+					cmd.Stdout = file
+				}
 				
 				err := cmd.Run()
 				if err != nil {
