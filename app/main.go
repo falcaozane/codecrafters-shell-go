@@ -20,12 +20,20 @@ func main() {
 			os.Exit(0)
 		}
 
-		input = strings.TrimSpace(input)
+		input = strings.TrimSuffix(input, "\n")
+		input = strings.TrimSuffix(input, "\r")
+
+
 		if input == "" {
 			continue
 		}
 
-		parts := strings.Fields(input)
+		parts := parseInput(input)
+
+		if len(parts) == 0 {
+			continue
+		}
+
 		command := parts[0]
 		args := parts[1:]
 
@@ -116,7 +124,7 @@ func changeDirectory(path string) {
 		}
 		targetPath = home
 	} else if strings.HasPrefix(path, "~/") {
-		// Handle paths like ~/Downloads
+		// Handle paths like ~/Downloads or ~/some/other/path
 		home, _ := os.UserHomeDir()
 		targetPath = filepath.Join(home, path[2:])
 	} else {
@@ -130,4 +138,43 @@ func changeDirectory(path string) {
 		// not the expanded internal 'targetPath'
 		fmt.Printf("cd: %s: No such file or directory\n", path)
 	}
+}
+
+// parseInput manages the State Machine for parsing command line input
+func parseInput(input string) []string {
+	var args []string
+	var currentArg strings.Builder
+	inSingleQuotes := false
+	hasContent := false
+
+	for i:=0; i<len(input); i++ {
+		char := input[i]
+
+		if char == '\''{
+			inSingleQuotes = !inSingleQuotes
+			hasContent = true
+			continue
+		}
+
+		if inSingleQuotes {
+			currentArg.WriteByte(char)
+		}else{
+			if char == ' ' || char == '\t' {
+				if hasContent {
+					args = append(args, currentArg.String())
+					currentArg.Reset()
+					hasContent = false
+				}
+			} else {
+				currentArg.WriteByte(char)
+				hasContent = true
+			}
+		}
+	}
+
+	if hasContent {
+		args = append(args, currentArg.String())
+	}
+
+	return args
 }
