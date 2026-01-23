@@ -72,7 +72,7 @@ func main() {
 			if found {
 				// Use the original command name for the arguments list
 				// but point the execution Path to the fullPath found.
-				cmd := exec.Command(command, args...)
+				cmd := exec.Command(command, cleanedArgs...)
 				cmd.Path = fullPath 
 				
 				cmd.Stdout = os.Stdout
@@ -81,7 +81,7 @@ func main() {
 				if stdoutFile != "" {
 					file, err := os.OpenFile(stdoutFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 					if err != nil {
-						fmt.Printf("Error creating file %s: %v\n", stdoutFile, err)
+						fmt.Printf("Error opening file %s: %v\n", stdoutFile, err)
 						continue
 					}
 					defer file.Close()
