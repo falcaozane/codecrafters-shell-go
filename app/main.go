@@ -144,55 +144,68 @@ func changeDirectory(path string) {
 func parseInput(input string) []string {
 	var args []string
 	var currentArg strings.Builder
-	inSingleQuotes := false
-	inDoubleQuotes := false
-	isEscaped := false
+	inSingle := false
+	inDouble := false
 	hasContent := false
 
-	for i:=0; i<len(input); i++ {
+	for i := 0; i < len(input); i++ {
 		char := input[i]
 
-		if isEscaped {
-			currentArg.WriteByte(char)
-			isEscaped = false
-			hasContent = true
+		// 1. Backslash OUTSIDE of any quotes
+		if char == '\\' && !inSingle && !inDouble {
+			if i+1 < len(input) {
+				currentArg.WriteByte(input[i+1])
+				i++
+				hasContent = true
+			}
 			continue
 		}
 
-		if char == '\\' && !inSingleQuotes {
-			isEscaped = true
-			continue
-		}
-
-		if char == '\'' && !inDoubleQuotes {
-			inSingleQuotes = !inSingleQuotes
-			hasContent = true
-			continue
-		}
-
-		if char == '"' && !inSingleQuotes {
-			inDoubleQuotes = !inDoubleQuotes
-			hasContent = true
-			continue
-		}
-
-		
-		if (char == ' ' || char == '\t') && !inSingleQuotes && !inDoubleQuotes {
-			if hasContent {
-					args = append(args, currentArg.String())
-					currentArg.Reset()
-					hasContent = false
+		// 2. Backslash INSIDE Double Quotes (The "Selective" rule)
+		if char == '\\' && inDouble {
+			if i+1 < len(input) {
+				next := input[i+1]
+				if next == '"' || next == '\\' || next == '$' || next == '\n' {
+					currentArg.WriteByte(next)
+					i++
+				} else {
+					currentArg.WriteByte('\\')
 				}
-		} else {
-			currentArg.WriteByte(char)
+			} else {
+				currentArg.WriteByte('\\')
+			}
 			hasContent = true
+			continue
 		}
 
+		// 3. Handle Quotes
+		if char == '\'' && !inDouble {
+			inSingle = !inSingle
+			hasContent = true
+			continue
+		}
+		if char == '"' && !inSingle {
+			inDouble = !inDouble
+			hasContent = true
+			continue
+		}
+
+		// 4. Handle Delimiters
+		if (char == ' ' || char == '\t') && !inSingle && !inDouble {
+			if hasContent {
+				args = append(args, currentArg.String())
+				currentArg.Reset()
+				hasContent = false
+			}
+			continue
+		}
+
+		currentArg.WriteByte(char)
+		hasContent = true
 	}
 
 	if hasContent {
 		args = append(args, currentArg.String())
 	}
-
 	return args
 }
