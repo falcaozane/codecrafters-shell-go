@@ -145,31 +145,49 @@ func parseInput(input string) []string {
 	var args []string
 	var currentArg strings.Builder
 	inSingleQuotes := false
+	inDoubleQuotes := false
+	isEscaped := false
 	hasContent := false
 
 	for i:=0; i<len(input); i++ {
 		char := input[i]
 
-		if char == '\''{
+		if isEscaped {
+			currentArg.WriteByte(char)
+			isEscaped = false
+			hasContent = true
+			continue
+		}
+
+		if char == '\\' && !inSingleQuotes {
+			isEscaped = true
+			continue
+		}
+
+		if char == '\'' && !inDoubleQuotes {
 			inSingleQuotes = !inSingleQuotes
 			hasContent = true
 			continue
 		}
 
-		if inSingleQuotes {
-			currentArg.WriteByte(char)
-		}else{
-			if char == ' ' || char == '\t' {
-				if hasContent {
+		if char == '"' && !inSingleQuotes {
+			inDoubleQuotes = !inDoubleQuotes
+			hasContent = true
+			continue
+		}
+
+		
+		if (char == ' ' || char == '\t') && !inSingleQuotes && !inDoubleQuotes {
+			if hasContent {
 					args = append(args, currentArg.String())
 					currentArg.Reset()
 					hasContent = false
 				}
-			} else {
-				currentArg.WriteByte(char)
-				hasContent = true
-			}
+		} else {
+			currentArg.WriteByte(char)
+			hasContent = true
 		}
+
 	}
 
 	if hasContent {
